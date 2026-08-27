@@ -38,6 +38,41 @@ async def on_ready():
         print(f"{len(synced)} slash komut senkronize edildi.")
     except Exception as e:
         print(e)
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+
+    # "arda kim" yazıldığında vereceği yanıt
+    if "arda kim" in message.content.lower():
+        await message.channel.send("Salak bi obez")
+        return
+
+    content_lower = message.content.lower()
+    
+    # Küfür koruması
+    for word, response_template in BAD_WORD_RESPONSES.items():
+        if word in content_lower:
+            try:
+                await message.delete()
+                custom_message = response_template.format(author=message.author.mention)
+                await message.channel.send(custom_message, delete_after=6)
+            except:
+                pass
+            return
+
+    # XP Sistemi
+    author_id = message.author.id
+    if author_id not in users_xp:
+        users_xp[author_id] = {"xp": 0, "level": 1}
+    
+    users_xp[author_id]["xp"] += random.randint(5, 15)
+    if users_xp[author_id]["xp"] >= users_xp[author_id]["level"] * 100:
+        users_xp[author_id]["level"] += 1
+        users_xp[author_id]["xp"] = 0
+        await message.channel.send(f"Tebrikler {message.author.mention}! **Seviye {users_xp[author_id]['level']}** oldun! 🎉")
+
+    await bot.process_commands(message)
 
 @bot.event
 async def on_message(message):
