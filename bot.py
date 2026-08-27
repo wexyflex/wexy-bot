@@ -58,10 +58,23 @@ class YTDLSource(discord.PCMVolumeTransformer):
 async def on_ready():
     print(f'{bot.user.name} aktif! x77 Arena ve Tüm Sistemler Devrede.')
     try:
-        synced = await bot.tree.sync()
-        print(f"{len(synced)} slash komut senkronize edildi.")
+        # Botun olduğu TÜM sunuculara komutları anında senkronize eder (Çoklu sunucu uyumlu!)
+        for guild in bot.guilds:
+            bot.tree.copy_global_to(guild=guild)
+            await bot.tree.sync(guild=guild)
+        print(f"Botun bulunduğu {len(bot.guilds)} sunucuya komutlar anında senkronize edildi.")
     except Exception as e:
-        print(e)
+        print(f"Senkronizasyon hatası: {e}")
+
+# Yeni bir sunucuya katıldığında komutların orada da anında çalışması için:
+@bot.event
+async def on_guild_join(guild):
+    try:
+        bot.tree.copy_global_to(guild=guild)
+        await bot.tree.sync(guild=guild)
+        print(f"Yeni katılınan sunucuya komutlar yüklendi: {guild.name}")
+    except Exception as e:
+        print(f"Yeni sunucu senkronizasyon hatası: {e}")
 
 # ----------------------------------------------------
 # 🤖 TEMEL SİSTEMLER & BİLGİ KOMUTLARI
@@ -130,7 +143,7 @@ async def sor(interaction: discord.Interaction, soru: str):
         await interaction.followup.send(f"Kanka şu an yapay zeka beynim biraz yandı, sonra dene. Hata: {e}")
 
 # ----------------------------------------------------
-# 🎵 MÜZİK SİSTEMİ (/play & /stop) - ZAMAN AŞIMI GİDERİLDİ
+# 🎵 MÜZİK SİSTEMİ (/play & /stop)
 # ----------------------------------------------------
 @bot.tree.command(name="play", description="Ses kanalına gelip yazdığın şarkıyı bulur ve çalar.")
 @discord.app_commands.describe(sarki="Çalmak istediğin şarkının adı veya linki")
@@ -139,7 +152,6 @@ async def play(interaction: discord.Interaction, sarki: str):
         await interaction.response.send_message("Kanka önce bir ses kanalına girmen lazım!", ephemeral=True)
         return
 
-    # Zaman aşımını (10062 Unknown Interaction) önlemek için thinking=True ekledik
     await interaction.response.defer(thinking=True)
     channel = interaction.user.voice.channel
     
