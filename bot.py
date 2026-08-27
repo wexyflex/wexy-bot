@@ -237,4 +237,6 @@ async def bilgi(interaction: discord.Interaction):
     embed.set_footer(text="Created By WEXYx77")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
-bot.run('sanada')
+import os
+
+bot.run(os.getenv('DISCORD_TOKEN'))
