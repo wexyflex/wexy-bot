@@ -1,4 +1,4 @@
 discord.py
 google-generativeai
 yt-dlp
-PyNaCl
+PyNaCl>=1.5.0
