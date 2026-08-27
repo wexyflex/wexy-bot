@@ -64,7 +64,15 @@ async def on_message(message):
         return
 
     # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
-   if bot.user.mentioned_in(message):
+   @bot.event
+async def on_message(message):
+    if message.author == bot.user:
+        return
+
+    # Küfür engelleme kısımları (varsa alt alta elif'ler burada kalabilir)
+    
+    # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
+    if bot.user.mentioned_in(message):
         prompt = message.content.replace(f'<@!{bot.user.id}>', '').replace(f'<@{bot.user.id}>', '').strip()
         if prompt:
             try:
@@ -79,7 +87,6 @@ async def on_message(message):
                 return
 
     await bot.process_commands(message)
-
 
 # ================= PRATİK BOŞLUKLU TURNUVA SİSTEMİ =================
 
