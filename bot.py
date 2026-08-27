@@ -64,7 +64,7 @@ async def on_message(message):
         return
 
     # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
-   @bot.event
+  @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
