@@ -63,8 +63,8 @@ async def on_message(message):
         await message.channel.send("Aynen kendinden biliyorsun.")
         return
 
-    # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
-  @bot.event
+  # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
+@bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
