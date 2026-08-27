@@ -64,21 +64,19 @@ async def on_message(message):
         return
 
     # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
-    if bot.user.mentioned_in(message):
+   if bot.user.mentioned_in(message):
         prompt = message.content.replace(f'<@!{bot.user.id}>', '').replace(f'<@{bot.user.id}>', '').strip()
         if prompt:
             try:
-        # Doğrudan model objesini çağırıp içeriği veriyoruz
-        model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash", 
-            system_instruction="Sen Discord sunucusunda takılan, biraz agresif, lafı gediğine oturtan, samimi ve Türkçe konuşan zeki bir yapay zeka botusun."
-        )
-        response = model.generate_content(prompt)
-        
-        await message.channel.send(response.text)
-    except Exception as e:
-        await message.channel.send(f"Kanka şu an yapay zeka beynim biraz yandı, sonra dene. Hata: {e}")
-        return
+                model = genai.GenerativeModel(
+                    model_name="gemini-1.5-flash",
+                    system_instruction="Sen Discord sunucusunda takılan, biraz agresif, lafı gediğine oturtan, samimi ve Türkçe konuşan zeki bir yapay zeka botusun."
+                )
+                response = model.generate_content(prompt)
+                await message.channel.send(response.text)
+            except Exception as e:
+                await message.channel.send(f"Kanka şu an yapay zeka beynim biraz yandı, sonra dene. Hata: {e}")
+                return
 
     await bot.process_commands(message)
 
