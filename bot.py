@@ -48,7 +48,6 @@ class YTDLSource(discord.PCMVolumeTransformer):
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
-        # yt-dlp işlemlerini bloklamamak için thread içinde çalıştırıyoruz (düşünme sorunu yaşatmaz)
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url if url.startswith("http") else f"ytsearch:{url}", download=not stream))
         if 'entries' in data:
             data = data['entries'][0]
@@ -119,7 +118,7 @@ async def botinfo(interaction: discord.Interaction):
 @bot.tree.command(name="sor", description="Yapay zekaya soru sor.")
 @discord.app_commands.describe(soru="Yapay zekaya yöneltmek istediğin soru")
 async def sor(interaction: discord.Interaction, soru: str):
-    await interaction.response.defer()
+    await interaction.response.defer(thinking=True)
     try:
         model = genai.GenerativeModel(
             model_name="gemini-1.5-flash",
@@ -131,33 +130,35 @@ async def sor(interaction: discord.Interaction, soru: str):
         await interaction.followup.send(f"Kanka şu an yapay zeka beynim biraz yandı, sonra dene. Hata: {e}")
 
 # ----------------------------------------------------
-# 🎵 MÜZİK SİSTEMİ (/play & /stop)
+# 🎵 MÜZİK SİSTEMİ (/play & /stop) - ZAMAN AŞIMI GİDERİLDİ
 # ----------------------------------------------------
-@bot.tree.command(name="play", description="Ses kanalına gelip yazdığın şarkıyı (yanlış yazsan bile) bulur ve çalar.")
+@bot.tree.command(name="play", description="Ses kanalına gelip yazdığın şarkıyı bulur ve çalar.")
 @discord.app_commands.describe(sarki="Çalmak istediğin şarkının adı veya linki")
 async def play(interaction: discord.Interaction, sarki: str):
     if not interaction.user.voice:
         await interaction.response.send_message("Kanka önce bir ses kanalına girmen lazım!", ephemeral=True)
         return
 
-    await interaction.response.defer()
+    # Zaman aşımını (10062 Unknown Interaction) önlemek için thinking=True ekledik
+    await interaction.response.defer(thinking=True)
     channel = interaction.user.voice.channel
     
-    if interaction.guild.voice_client is not None:
-        await interaction.guild.voice_client.move_to(channel)
-    else:
-        await channel.connect()
-
-    voice_client = interaction.guild.voice_client
-
     try:
+        if interaction.guild.voice_client is not None:
+            await interaction.guild.voice_client.move_to(channel)
+        else:
+            await channel.connect()
+
+        voice_client = interaction.guild.voice_client
+
         player = await YTDLSource.from_url(sarki, loop=bot.loop, stream=True)
         if voice_client.is_playing():
             voice_client.stop()
-        voice_client.play(player, after=lambda e: print(f'Hata: {e}') if e else None)
+        
+        voice_client.play(player, after=lambda e: print(f'Müzik bitti veya hata: {e}') if e else None)
         await interaction.followup.send(f"🎶 Şimdi çalınıyor: **{player.title}**")
     except Exception as e:
-        await interaction.followup.send(f"Kanka şarkıyı ararken bi aksilik çıktı: {e}")
+        await interaction.followup.send(f"Kanka şarkıyı açarken bi aksilik çıktı: {e}")
 
 @bot.tree.command(name="stop", description="Botu ses kanalından çıkarır ve müziği durdurur.")
 async def stop(interaction: discord.Interaction):
