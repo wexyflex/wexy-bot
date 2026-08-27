@@ -186,19 +186,21 @@ async def fikir(interaction: discord.Interaction, kategori: str = "oyun"):
 
 @bot.tree.command(name="sor", description="Yapay zekaya soru sor")
 async def sor(interaction: discord.Interaction, soru: str):
-    await interaction.response.defer() # Discord'a "düşünüyorum" der, zaman aşımını engeller
+    # 1. Önce Discord'a zaman aşımını önlemek için "düşünüyorum" sinyali veriyoruz
+    await interaction.response.defer()
     
     try:
-        # Yapay zekaya istek attığın kod bura
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        # 2. Modeli çağırıyoruz (burada da system_instruction ekleyebilirsin)
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction="Sen Discord sunucusunda takılan, biraz agresif, lafı gediğine oturtan, samimi ve Türkçe konuşan zeki bir yapay zeka botusun."
+        )
         response = model.generate_content(soru)
         
-        # Cevabı gönder
+        # 3. Cevabı followup ile gönderiyoruz
         await interaction.followup.send(response.text)
     except Exception as e:
-        await interaction.followup.send(f"Kanka yapay zeka şu an cevap veremiyor. Hata: {e}")
-    except Exception as e:
-        await interaction.followup.send("Kanka yapay zeka şu an cevap veremiyor.")
+        await interaction.followup.send(f"Kanka şu an yapay zeka beynim biraz yandı, sonra dene. Hata: {e}")
 
 @bot.tree.command(name="zar", description="1 ile 6 arasında rastgele bir zar atar.")
 async def zar(interaction: discord.Interaction):
