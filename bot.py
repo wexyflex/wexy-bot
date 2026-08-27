@@ -69,9 +69,12 @@ async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Küfür engelleme kısımları (varsa alt alta elif'ler burada kalabilir)
-    
-    # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
+    # 1. Küfür veya diğer kelime kontrollerini buraya ekleyebilirsin (örnek):
+    # if "yarram" in message.content.lower():
+    #     await message.channel.send("O kadar küçük değilim canoooooo")
+    #     return
+
+    # 2. YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
     if bot.user.mentioned_in(message):
         prompt = message.content.replace(f'<@!{bot.user.id}>', '').replace(f'<@{bot.user.id}>', '').strip()
         if prompt:
@@ -86,6 +89,7 @@ async def on_message(message):
                 await message.channel.send(f"Kanka şu an yapay zeka beynim biraz yandı, sonra dene. Hata: {e}")
                 return
 
+    # 3. Komutların çalışması için bu şart!
     await bot.process_commands(message)
 
 # ================= PRATİK BOŞLUKLU TURNUVA SİSTEMİ =================
