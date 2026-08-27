@@ -1,14 +1,15 @@
+import os
 import discord
 from discord.ext import commands
-from google import genai
 import random
+import google.generativeai as genai
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
-import google.generativeai as genai
 
+# Gemini API yapılandırması
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 @bot.event
