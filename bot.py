@@ -183,18 +183,19 @@ async def fikir(interaction: discord.Interaction, kategori: str = "oyun"):
 
 # ================= YAPAY ZEKA VE EĞLENCE =================
 
-@bot.tree.command(name="sor", description="Yapay zekaya doğrudan dilediğin bir soruyu sor.")
+@bot.tree.command(name="sor", description="Yapay zekaya soru sor")
 async def sor(interaction: discord.Interaction, soru: str):
-    await interaction.response.defer()
+    await interaction.response.defer() # Discord'a "düşünüyorum" der, zaman aşımını engeller
+    
     try:
-        response = ai_client.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=soru,
-            config={
-                'system_instruction': 'Sen Discord sunucusunda takılan, biraz agresif, lafı gediğine oturtan, samimi ve Türkçe konuşan zeki bir yapay zeka botusun.'
-            }
-        )
-        await interaction.followup.send(f"🤖 **Soru:** {soru}\n\n💬 **Cevap:** {response.text}")
+        # Yapay zekaya istek attığın kod bura
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(soru)
+        
+        # Cevabı gönder
+        await interaction.followup.send(response.text)
+    except Exception as e:
+        await interaction.followup.send(f"Kanka yapay zeka şu an cevap veremiyor. Hata: {e}")
     except Exception as e:
         await interaction.followup.send("Kanka yapay zeka şu an cevap veremiyor.")
 
