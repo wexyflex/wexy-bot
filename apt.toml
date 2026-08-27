@@ -1,1 +1,8 @@
-packages = ["libffi-dev", "gcc", "g++"]
+packages = [
+    "libffi-dev",
+    "gcc",
+    "g++",
+    "python3-dev",
+    "libopus0",
+    "ffmpeg"
+]
