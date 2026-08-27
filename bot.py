@@ -46,9 +46,10 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
 
     @classmethod
-    def from_url(cls, url, *, loop=None, stream=False):
+    async def from_url(cls, url, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
-        data = ytdl.extract_info(url if url.startswith("http") else f"ytsearch:{url}", download=not stream)
+        # yt-dlp işlemlerini bloklamamak için thread içinde çalıştırıyoruz (düşünme sorunu yaşatmaz)
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url if url.startswith("http") else f"ytsearch:{url}", download=not stream))
         if 'entries' in data:
             data = data['entries'][0]
         filename = data['url'] if stream else ytdl.prepare_filename(data)
@@ -56,7 +57,7 @@ class YTDLSource(discord.PCMVolumeTransformer):
 
 @bot.event
 async def on_ready():
-    print(f'{bot.user.name} aktif! x77 Arena ve Sistemler Tam Gaz Devrede.')
+    print(f'{bot.user.name} aktif! x77 Arena ve Tüm Sistemler Devrede.')
     try:
         synced = await bot.tree.sync()
         print(f"{len(synced)} slash komut senkronize edildi.")
@@ -64,49 +65,49 @@ async def on_ready():
         print(e)
 
 # ----------------------------------------------------
-# 🤖 TEMEL SİSTEMLER & DETAYLI /HELP MENÜSÜ
+# 🤖 TEMEL SİSTEMLER & BİLGİ KOMUTLARI
 # ----------------------------------------------------
-@bot.tree.command(name="help", description="Tüm komutları ve sistemleri detaylı gösterir.")
+@bot.tree.command(name="help", description="Tüm komutları ve sistemleri gösterir.")
 async def help_command(interaction: discord.Interaction):
-    embed = discord.Embed(title="🤖 x77 ARENA - Komut ve Sistem Listesi", color=discord.Color.blue())
-    
-    embed.add_field(
-        name="🤖 Temel Sistemler", 
-        value="`/help` - Komutlar\n`/ping` - Gecikme\n`/userinfo` - Kullanıcı\n`/serverinfo` - Sunucu\n`/avatar` - Avatar\n`/botinfo` - Bot Bilgi\n`/sor` - Yapay Zeka", 
-        inline=True
-    )
-    
-    embed.add_field(
-        name="🛡️ Moderasyon", 
-        value="`/ban`, `/kick`, `/mute`, `/unmute`, `/warn`, `/warnings`, `/clear`, `/lock`, `/unlock`\n*(Oto-küfür, spam, raid ve reklam koruması aktif!)*", 
-        inline=True
-    )
-    
-    embed.add_field(
-        name="🎵 Müzik Sistemi", 
-        value="`/play [şarkı adı]` - Akıllı eşleşmeli müzik çalar\n`/stop` - Durdur ve çık", 
-        inline=False
-    )
-
-    embed.add_field(
-        name="🏆 x77 Arena & E-Spor", 
-        value="`/arena-kayit` - Oyuncu kaydı\n`/mac-gir` - Maç sonucu\n*(Takım kurma, Elo/rank sistemi, Leaderboard ve turnuva altyapısı)*", 
-        inline=True
-    )
-
-    embed.add_field(
-        name="🎮 Eğlence & Ekonomi", 
-        value="`/8ball`, `/coinflip`, `/dice`, `/meme`, `/ship`, `/level`, `/gunluk`, Leaderboard", 
-        inline=True
-    )
-
-    embed.set_footer(text="x77 Bot - Güvenlik, E-Spor ve Müzik Altyapısı")
+    embed = discord.Embed(title="🤖 x77 BOT - Eksiksiz Komut Listesi", color=discord.Color.blue())
+    embed.add_field(name="🤖 Temel Sistemler", value="`/help`, `/ping`, `/userinfo`, `/serverinfo`, `/avatar`, `/botinfo`, `/sor`", inline=False)
+    embed.add_field(name="🛡️ Moderasyon", value="`/ban`, `/kick`, `/mute`, `/unmute`, `/warn`, `/warnings`, `/clear`, `/lock`, `/unlock`", inline=False)
+    embed.add_field(name="🎵 Müzik", value="`/play [şarkı]`, `/stop`", inline=False)
+    embed.add_field(name="🎮 Eğlence & Ekonomi", value="`/8ball`, `/coinflip`, `/dice`, `/meme`, `/ship`, `/level`, `/gunluk`, Leaderboard", inline=False)
+    embed.add_field(name="🏆 x77 Arena", value="`/arena-kayit`, `/mac-gir`, Takım & Turnuva sistemleri", inline=False)
+    embed.set_footer(text="x77 Bot - Güvenlik ve E-Spor Altyapısı")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @bot.tree.command(name="ping", description="Botun gecikme süresini gösterir.")
 async def ping(interaction: discord.Interaction):
     latency = round(bot.latency * 1000)
     await interaction.response.send_message(f"Pong! Gecikme süresi: **{latency}ms** 🏓")
+
+@bot.tree.command(name="userinfo", description="Kullanıcı hakkında bilgi verir.")
+async def userinfo(interaction: discord.Interaction, uye: discord.Member = None):
+    target = uye or interaction.user
+    embed = discord.Embed(title=f"Kullanıcı Bilgisi: {target.name}", color=discord.Color.gold())
+    embed.add_field(name="ID", value=target.id, inline=True)
+    embed.add_field(name="Sunucuya Katılım", value=target.joined_at.strftime("%d-%m-%Y") if target.joined_at else "Bilinmiyor", inline=True)
+    embed.set_thumbnail(url=target.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="serverinfo", description="Sunucu hakkında bilgi verir.")
+async def serverinfo(interaction: discord.Interaction):
+    guild = interaction.guild
+    embed = discord.Embed(title=f"Sunucu Bilgisi: {guild.name}", color=discord.Color.purple())
+    embed.add_field(name="Üye Sayısı", value=guild.member_count, inline=True)
+    embed.add_field(name="Kurucu", value=guild.owner, inline=True)
+    if guild.icon:
+        embed.set_thumbnail(url=guild.icon.url)
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="avatar", description="Kullanıcının profil fotoğrafını gösterir.")
+async def avatar(interaction: discord.Interaction, uye: discord.Member = None):
+    target = uye or interaction.user
+    embed = discord.Embed(title=f"{target.name} adlı kullanıcının avatarı", color=discord.Color.blurple())
+    embed.set_image(url=target.display_avatar.url)
+    await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="botinfo", description="Bot hakkında bilgi verir.")
 async def botinfo(interaction: discord.Interaction):
@@ -150,7 +151,9 @@ async def play(interaction: discord.Interaction, sarki: str):
     voice_client = interaction.guild.voice_client
 
     try:
-        player = YTDLSource.from_url(sarki, loop=bot.loop, stream=True)
+        player = await YTDLSource.from_url(sarki, loop=bot.loop, stream=True)
+        if voice_client.is_playing():
+            voice_client.stop()
         voice_client.play(player, after=lambda e: print(f'Hata: {e}') if e else None)
         await interaction.followup.send(f"🎶 Şimdi çalınıyor: **{player.title}**")
     except Exception as e:
@@ -190,6 +193,58 @@ async def ban(interaction: discord.Interaction, uye: discord.Member, sebep: str 
     await uye.ban(reason=sebep)
     await interaction.response.send_message(f"🔨 {uye.mention} sunucudan banlandı! Sebep: {sebep}")
 
+@bot.tree.command(name="kick", description="Kullanıcıyı sunucudan atar.")
+@commands.has_permissions(kick_members=True)
+async def kick(interaction: discord.Interaction, uye: discord.Member, sebep: str = "Belirtilmedi"):
+    await uye.kick(reason=sebep)
+    await interaction.response.send_message(f"👢 {uye.mention} sunucudan atıldı! Sebep: {sebep}")
+
+@bot.tree.command(name="mute", description="Kullanıcıyı susturur.")
+@commands.has_permissions(moderate_members=True)
+async def mute(interaction: discord.Interaction, uye: discord.Member, dakika: int, sebep: str = "Belirtilmedi"):
+    duration = discord.utils.utcnow() + discord.timedelta(minutes=dakika)
+    await uye.timeout(duration, reason=sebep)
+    await interaction.response.send_message(f"🔇 {uye.mention} {dakika} dakika süreyle susturuldu! Sebep: {sebep}")
+
+@bot.tree.command(name="unmute", description="Kullanıcının susturmasını kaldırır.")
+@commands.has_permissions(moderate_members=True)
+async def unmute(interaction: discord.Interaction, uye: discord.Member):
+    await uye.timeout(None)
+    await interaction.response.send_message(f"🔊 {uye.mention} kullanıcısının susturması kaldırıldı.")
+
+@bot.tree.command(name="warn", description="Kullanıcıya uyarı verir.")
+@commands.has_permissions(manage_messages=True)
+async def warn(interaction: discord.Interaction, uye: discord.Member, sebep: str):
+    await interaction.response.send_message(f"⚠️ {uye.mention} uyarıldı! Sebep: **{sebep}**")
+
+@bot.tree.command(name="lock", description="Kanalı mesaj gönderimine kapatır.")
+@commands.has_permissions(manage_channels=True)
+async def lock(interaction: discord.Interaction):
+    await interaction.channel.set_permissions(interaction.guild.default_role, send_messages=False)
+    await interaction.response.send_message("🔒 Kanal yazışmaya kapatıldı!")
+
+@bot.tree.command(name="unlock", description="Kanalı mesaj gönderimine açar.")
+@commands.has_permissions(manage_channels=True)
+async def unlock(interaction: discord.Interaction):
+    await interaction.channel.set_permissions(interaction.guild.default_role, send_messages=True)
+    await interaction.response.send_message("🔓 Kanal yeniden yazışmaya açıldı!")
+
+# ----------------------------------------------------
+# 🎮 EĞLENCE KOMUTLARI
+# ----------------------------------------------------
+@bot.tree.command(name="8ball", description="Sihirli 8-ball sorularını yanıtlar.")
+@discord.app_commands.describe(soru="Yazacağın soru")
+async def eight_ball(interaction: discord.Interaction, soru: str):
+    import random
+    cevaplar = ["Kesinlikle öyle.", "Büyük ihtimalle.", "Kesinlikle hayır.", "Bunu asla bilemezsin.", "Tekrar dene koçum."]
+    await interaction.response.send_message(f"❓ Soru: {soru}\n🎱 Cevap: **{random.choice(cevaplar)}**")
+
+@bot.tree.command(name="coinflip", description="Yazı tura atar.")
+async def coinflip(interaction: discord.Interaction):
+    import random
+    sonuc = random.choice(["Yazı", "Tura"])
+    await interaction.response.send_message(f"🪙 Para atıldı: **{sonuc}**!")
+
 # ----------------------------------------------------
 # 💬 OTO-CEVAP, KÜFÜR VE GÜVENLİK FİLTRESİ (`on_message`)
 # ----------------------------------------------------
@@ -200,12 +255,10 @@ async def on_message(message):
 
     mesaj = message.content.lower()
     
-    # Özel Küfür Karşılığı
     if "yarram" in mesaj:
         await message.channel.send("O kadar küçük değilim malesef.")
         return
 
-    # Reklam ve Spam Koruması
     if "discord.gg/" in mesaj or "https://" in mesaj:
         if not message.author.guild_permissions.manage_messages:
             try:
@@ -225,7 +278,6 @@ async def on_message(message):
         await message.channel.send("Aynaya baktın herhalde koçum, kendine gel.")
         return
 
-    # YAPAY ZEKA SOHBET SİSTEMİ (Etiketlenince)
     if bot.user.mentioned_in(message):
         prompt = message.content.replace(f'<@!{bot.user.id}>', '').replace(f'<@{bot.user.id}>', '').strip()
         if prompt:
